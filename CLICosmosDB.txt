@@ -14,3 +14,121 @@ az group create --name CursoCosmosDB --location eastus2
 az group delete --name CursoCosmosDB --yes --no-wait
 
 daniela
+
+OSCAR NB
+
+1. Gestión de Cuentas (Nivel Global)
+Antes de crear bases de datos o contenedores, necesitas la "cuenta" (el servidor lógico).
+
+Crear una cuenta nueva:
+
+Bash
+az cosmosdb create \
+    --name mi-cuenta-cosmos \
+    --resource-group mi-grupo-recursos \
+    --locations regionName=eastus failoverPriority=0 isZoneRedundant=False \
+    --default-consistency-level Session
+Listar todas tus cuentas:
+
+Bash
+az cosmosdb list --resource-group mi-grupo-recursos
+Obtener las claves de acceso (Endpoint y Primary Key):
+
+Bash
+    az cosmosdb keys list --name mi-cuenta-cosmos --resource-group mi-grupo-recursos
+    ```
+
+---
+
+## 2. Gestión de Bases de Datos (SQL API)
+La mayoría de las implementaciones usan la API de SQL (NoSQL).
+
+*   **Crear una base de datos:**
+    
+```bash
+    az cosmosdb sql database create \
+        --account-name mi-cuenta-cosmos \
+        --resource-group mi-grupo-recursos \
+        --name nombre-bd
+    ```
+*   **Crear un contenedor (Tabla/Colección):**
+    Es vital definir la `/partitionKey`.
+    
+```bash
+    az cosmosdb sql container create \
+        --account-name mi-cuenta-cosmos \
+        --resource-group mi-grupo-recursos \
+        --database-name nombre-bd \
+        --name mi-contenedor \
+        --partition-key-path "/userId" \
+        --throughput 400
+    ```
+
+
+
+---
+
+## 3. Escalado y Rendimiento (Throughput)
+Uno de los puntos fuertes de Cosmos DB es el ajuste de RUs (Request Units).
+
+*   **Actualizar el rendimiento manual:**
+    
+```bash
+    az cosmosdb sql container throughput update \
+        --account-name mi-cuenta-cosmos \
+        --resource-group mi-grupo-recursos \
+        --database-name nombre-bd \
+        --name mi-contenedor \
+        --throughput 1000
+    ```
+*   **Configurar Autoscale:**
+    Ideal para cargas variables (se define el máximo y el sistema escala hasta el 10%).
+    
+```bash
+    az cosmosdb sql container throughput update \
+        --account-name mi-cuenta-cosmos \
+        --resource-group mi-grupo-recursos \
+        --database-name nombre-bd \
+        --name mi-contenedor \
+        --max-throughput 4000
+    ```
+
+---
+
+## 4. Alta Disponibilidad y Failover
+Si necesitas que tu base de datos sobreviva a una caída regional:
+
+*   **Añadir una región de lectura:**
+    
+```bash
+    az cosmosdb update \
+        --name mi-cuenta-cosmos \
+        --resource-group mi-grupo-recursos \
+        --locations regionName=eastus failoverPriority=0 \
+        --locations regionName=westeurope failoverPriority=1
+    ```
+*   **Forzar una conmutación por error (Failover):**
+    
+```bash
+    az cosmosdb failover-priority-change \
+        --name mi-cuenta-cosmos \
+        --resource-group mi-grupo-recursos \
+        --failover-policies "eastus=1" "westeurope=0"
+    ```
+
+---
+
+## 5. Resumen de comandos por API
+Dependiendo del "sabor" de Cosmos DB que uses, el prefijo del comando cambia ligeramente:
+
+| API | Comando Base |
+| :--- | :--- |
+| **SQL (NoSQL)** | `az cosmosdb sql` |
+| **MongoDB** | `az cosmosdb mongodb` |
+| **Cassandra** | `az cosmosdb cassandra` |
+| **Gremlin (Graph)** | `az cosmosdb gremlin` |
+| **Table** | `az cosmosdb table` |
+
+---
+
+> **Tip Pro:** Si vas a realizar muchas operaciones, asegúrate de tener instalada la extensión de Cosmos DB en tu CLI: `az extension add --name cosmosdb-preview`.
