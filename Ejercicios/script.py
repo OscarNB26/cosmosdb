@@ -1,7 +1,7 @@
 from azure.cosmos import CosmosClient
 from azure.identity import DefaultAzureCredential
 
-endpoint = "https://<your-cosmos-db-account>.documents.azure.com:443/"
+endpoint = "https://fanogarcosmosdb.documents.azure.com:443/"
 credential = DefaultAzureCredential()
 
 client = CosmosClient(endpoint, credential=credential)
